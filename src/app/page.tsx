@@ -175,7 +175,7 @@ export default function Home() {
         </h1>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Form Section */}
-          <div className="bg-white p-6 rounded-lg shadow-md">
+          <div className="bg-white p-6 rounded-lg shadow-lg">
             <h2 className="text-2xl font-bold mb-6 text-center">
               {formData._id ? "Edit Student" : "Student Registration Form"}
             </h2>
@@ -293,6 +293,7 @@ export default function Home() {
                 students={students}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
+                
               />
             )}
           </div>
