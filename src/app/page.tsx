@@ -280,12 +280,12 @@ export default function Home() {
           </div>
 
           {/* Table Section */}
-          <div className="bg-white p-6 rounded-lg shadow-md">
+          <div className="bg-white p-6 rounded-lg shadow-md h-[700px] overflow-auto">
             <h2 className="text-2xl font-bold mb-6 text-center">
               Student Details
             </h2>
             {isLoading ? (
-              <div className="flex justify-center items-center h-32">
+              <div className="flex justify-center items-center h-32 ">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
               </div>
             ) : (
