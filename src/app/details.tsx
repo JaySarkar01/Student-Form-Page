@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import ReactPaginate from "react-paginate";
 
+// Define the structure of a Student object
 interface Student {
   _id: string;
   name: string;
@@ -9,6 +10,7 @@ interface Student {
   course: string;
 }
 
+// Define the expected props for the ShowDetails component
 interface Props {
   students: Student[];
   onEdit: (student: Student) => void;
@@ -16,55 +18,69 @@ interface Props {
 }
 
 export default function ShowDetails({ students, onEdit, onDelete }: Props) {
-  const [sortConfig, setSortConfig] = useState<{ key: keyof Student; direction: "asc" | "desc" }>({
+  // State for sorting configuration
+  const [sortConfig, setSortConfig] = useState<{
+    key: keyof Student;
+    direction: "asc" | "desc";
+  }>({
     key: "name",
     direction: "asc",
   });
 
+  // State for search and filtering
   const [searchText, setSearchText] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCourse, setSelectedCourse] = useState("");
+  const [appliedCourse, setAppliedCourse] = useState("");
 
+  // State for pagination
   const [currentPage, setCurrentPage] = useState(0);
-  const itemsPerPage = 5; // Number of students per page
+  const itemsPerPage = 5;
 
-  // Get unique course options from students
+  // Get unique course options from students list
   const courseOptions = useMemo(() => {
     return Array.from(new Set(students.map((student) => student.course)));
   }, [students]);
 
-  // Sort and Filter Logic Combined
+  // Apply filtering and sorting logic
   const sortedAndFilteredStudents = useMemo(() => {
     let filtered = students.filter(
       (student) =>
         (student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           student.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
           student.age.toString().includes(searchQuery)) &&
-        (selectedCourse ? student.course === selectedCourse : true)
+        (appliedCourse ? student.course === appliedCourse : true)
     );
 
+    // Sort students based on selected criteria
     if (sortConfig.key) {
       filtered = [...filtered].sort((a, b) => {
-        return String(a[sortConfig.key])
-          .localeCompare(String(b[sortConfig.key]), undefined, { sensitivity: "base" })
-          * (sortConfig.direction === "asc" ? 1 : -1);
+        return (
+          String(a[sortConfig.key]).localeCompare(
+            String(b[sortConfig.key]),
+            undefined,
+            { sensitivity: "base" }
+          ) * (sortConfig.direction === "asc" ? 1 : -1)
+        );
       });
     }
 
     return filtered;
-  }, [students, searchQuery, selectedCourse, sortConfig]);
+  }, [students, searchQuery, appliedCourse, sortConfig]);
 
-  // **Pagination Logic**
+  // Pagination calculations
   const pageCount = Math.ceil(sortedAndFilteredStudents.length / itemsPerPage);
   const displayedStudents = sortedAndFilteredStudents.slice(
     currentPage * itemsPerPage,
     (currentPage + 1) * itemsPerPage
   );
 
+  // Handle pagination click event
   const handlePageClick = (data: { selected: number }) => {
     setCurrentPage(data.selected);
   };
 
+  // Handle sorting on column click
   const handleSort = (key: keyof Student) => {
     setSortConfig((prev) => ({
       key,
@@ -72,20 +88,22 @@ export default function ShowDetails({ students, onEdit, onDelete }: Props) {
     }));
   };
 
+  // Handle search and filtering
   const handleSearch = () => {
     setSearchQuery(searchText);
-    setCurrentPage(0); // Reset to first page after searching
+    setAppliedCourse(selectedCourse);
+    setCurrentPage(0);
   };
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-lg w-full">
-      {/* Filters */}
+      {/* Search and filter section */}
       <div className="flex justify-between items-center mb-4">
         <div className="flex gap-2">
           <select
             value={selectedCourse}
             onChange={(e) => setSelectedCourse(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-4 py-2 border border-gray-300 rounded-lg"
           >
             <option value="">All Courses</option>
             {courseOptions.map((course) => (
@@ -95,14 +113,13 @@ export default function ShowDetails({ students, onEdit, onDelete }: Props) {
             ))}
           </select>
         </div>
-
         <div className="flex gap-2">
           <input
             type="text"
             placeholder="Search students..."
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-4 py-2 border border-gray-300 rounded-lg"
           />
           <button
             onClick={handleSearch}
@@ -115,6 +132,7 @@ export default function ShowDetails({ students, onEdit, onDelete }: Props) {
               onClick={() => {
                 setSearchText("");
                 setSearchQuery("");
+                setAppliedCourse("");
                 setCurrentPage(0);
               }}
               className="px-4 py-2 bg-green-700 text-white rounded-lg hover:bg-green-600"
@@ -125,12 +143,13 @@ export default function ShowDetails({ students, onEdit, onDelete }: Props) {
         </div>
       </div>
 
-      {/* Records Count */}
+      {/* Display record count */}
       <div className="text-sm text-gray-600 mb-4">
-        Showing {displayedStudents.length} of {sortedAndFilteredStudents.length} records
+        Showing {displayedStudents.length} of {sortedAndFilteredStudents.length}{" "}
+        records
       </div>
 
-      {/* Table */}
+      {/* Student table */}
       <div className="h-[400px] overflow-y-auto">
         <table className="w-full border-collapse border border-gray-300">
           <thead>
@@ -142,7 +161,8 @@ export default function ShowDetails({ students, onEdit, onDelete }: Props) {
                   onClick={() => handleSort(field as keyof Student)}
                 >
                   {field.charAt(0).toUpperCase() + field.slice(1)}{" "}
-                  {sortConfig.key === field && (sortConfig.direction === "asc" ? "↑" : "↓")}
+                  {sortConfig.key === field &&
+                    (sortConfig.direction === "asc" ? "↑" : "↓")}
                 </th>
               ))}
               <th className="border p-2">Actions</th>
@@ -183,21 +203,17 @@ export default function ShowDetails({ students, onEdit, onDelete }: Props) {
         </table>
       </div>
 
-      {/* Pagination Component */}
-      <div className="mt-4 flex justify-center">
+      {/* Pagination controls */}
+      <div className="mt-4 flex justify-end">
         <ReactPaginate
           previousLabel={"← Previous"}
           nextLabel={"Next →"}
-          breakLabel={"..."}
           pageCount={pageCount}
-          marginPagesDisplayed={1}
-          pageRangeDisplayed={2}
           onPageChange={handlePageClick}
+          marginPagesDisplayed={1}
+  pageRangeDisplayed={2}
           containerClassName={"pagination flex gap-2"}
           activeClassName={"bg-blue-500 text-white px-3 py-1 rounded-lg"}
-          pageClassName={"px-3 py-1 border rounded-lg"}
-          previousClassName={"px-3 py-1 border rounded-lg"}
-          nextClassName={"px-3 py-1 border rounded-lg"}
         />
       </div>
     </div>
