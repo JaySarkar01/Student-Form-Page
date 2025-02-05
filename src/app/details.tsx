@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import ReactPaginate from "react-paginate";
 
 interface Student {
   _id: string;
@@ -24,16 +25,15 @@ export default function ShowDetails({ students, onEdit, onDelete }: Props) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCourse, setSelectedCourse] = useState("");
 
-  // Pagination State
-  const [page, setPage] = useState(1);
-  const limit = 5; // Number of students per page
+  const [currentPage, setCurrentPage] = useState(0);
+  const itemsPerPage = 5; // Number of students per page
 
-  // Get unique course options
+  // Get unique course options from students
   const courseOptions = useMemo(() => {
     return Array.from(new Set(students.map((student) => student.course)));
   }, [students]);
 
-  // Sort and Filter Logic
+  // Sort and Filter Logic Combined
   const sortedAndFilteredStudents = useMemo(() => {
     let filtered = students.filter(
       (student) =>
@@ -44,23 +44,27 @@ export default function ShowDetails({ students, onEdit, onDelete }: Props) {
     );
 
     if (sortConfig.key) {
-      filtered = [...filtered].sort((a, b) =>
-        String(a[sortConfig.key])
-          .localeCompare(String(b[sortConfig.key]), undefined, { sensitivity: "base" }) *
-        (sortConfig.direction === "asc" ? 1 : -1)
-      );
+      filtered = [...filtered].sort((a, b) => {
+        return String(a[sortConfig.key])
+          .localeCompare(String(b[sortConfig.key]), undefined, { sensitivity: "base" })
+          * (sortConfig.direction === "asc" ? 1 : -1);
+      });
     }
 
     return filtered;
   }, [students, searchQuery, selectedCourse, sortConfig]);
 
-  // Calculate Pagination
-  const totalPages = Math.ceil(sortedAndFilteredStudents.length / limit);
-  const startIndex = (page - 1) * limit;
-  const endIndex = startIndex + limit;
-  const paginatedStudents = sortedAndFilteredStudents.slice(startIndex, endIndex);
+  // **Pagination Logic**
+  const pageCount = Math.ceil(sortedAndFilteredStudents.length / itemsPerPage);
+  const displayedStudents = sortedAndFilteredStudents.slice(
+    currentPage * itemsPerPage,
+    (currentPage + 1) * itemsPerPage
+  );
 
-  // Handle Sorting
+  const handlePageClick = (data: { selected: number }) => {
+    setCurrentPage(data.selected);
+  };
+
   const handleSort = (key: keyof Student) => {
     setSortConfig((prev) => ({
       key,
@@ -68,42 +72,42 @@ export default function ShowDetails({ students, onEdit, onDelete }: Props) {
     }));
   };
 
-  // Handle Search
   const handleSearch = () => {
     setSearchQuery(searchText);
-    setPage(1); // Reset to first page when searching
+    setCurrentPage(0); // Reset to first page after searching
   };
 
   return (
     <div className="bg-white p-6 rounded-lg shadow-lg w-full">
+      {/* Filters */}
       <div className="flex justify-between items-center mb-4">
-        {/* Course Filter */}
-        <select
-          value={selectedCourse}
-          onChange={(e) => {
-            setSelectedCourse(e.target.value);
-            setPage(1); // Reset to first page when filtering
-          }}
-          className="px-4 py-2 border border-gray-300 rounded-lg"
-        >
-          <option value="">All Courses</option>
-          {courseOptions.map((course) => (
-            <option key={course} value={course}>
-              {course}
-            </option>
-          ))}
-        </select>
+        <div className="flex gap-2">
+          <select
+            value={selectedCourse}
+            onChange={(e) => setSelectedCourse(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">All Courses</option>
+            {courseOptions.map((course) => (
+              <option key={course} value={course}>
+                {course}
+              </option>
+            ))}
+          </select>
+        </div>
 
-        {/* Search Bar */}
         <div className="flex gap-2">
           <input
             type="text"
             placeholder="Search students..."
             value={searchText}
             onChange={(e) => setSearchText(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg"
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          <button onClick={handleSearch} className="px-4 py-2 bg-blue-500 text-white rounded-lg">
+          <button
+            onClick={handleSearch}
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+          >
             Search
           </button>
           {searchQuery && (
@@ -111,9 +115,9 @@ export default function ShowDetails({ students, onEdit, onDelete }: Props) {
               onClick={() => {
                 setSearchText("");
                 setSearchQuery("");
-                setPage(1); // Reset to first page when resetting
+                setCurrentPage(0);
               }}
-              className="px-4 py-2 bg-green-700 text-white rounded-lg"
+              className="px-4 py-2 bg-green-700 text-white rounded-lg hover:bg-green-600"
             >
               Reset
             </button>
@@ -121,13 +125,13 @@ export default function ShowDetails({ students, onEdit, onDelete }: Props) {
         </div>
       </div>
 
-      {/* Showing Records Count */}
+      {/* Records Count */}
       <div className="text-sm text-gray-600 mb-4">
-        Showing {paginatedStudents.length} of {sortedAndFilteredStudents.length} students
+        Showing {displayedStudents.length} of {sortedAndFilteredStudents.length} records
       </div>
 
-      {/* Students Table */}
-      <div className="h-[500px] overflow-y-auto overflow-x-auto">
+      {/* Table */}
+      <div className="h-[400px] overflow-y-auto">
         <table className="w-full border-collapse border border-gray-300">
           <thead>
             <tr className="bg-gray-200">
@@ -145,14 +149,14 @@ export default function ShowDetails({ students, onEdit, onDelete }: Props) {
             </tr>
           </thead>
           <tbody>
-            {paginatedStudents.length === 0 ? (
+            {displayedStudents.length === 0 ? (
               <tr>
                 <td colSpan={5} className="text-center p-4 text-gray-500">
                   No students found
                 </td>
               </tr>
             ) : (
-              paginatedStudents.map((student) => (
+              displayedStudents.map((student) => (
                 <tr key={student._id} className="text-center">
                   <td className="border p-2">{student.name}</td>
                   <td className="border p-2">{student.email}</td>
@@ -161,13 +165,13 @@ export default function ShowDetails({ students, onEdit, onDelete }: Props) {
                   <td className="border p-2">
                     <button
                       onClick={() => onEdit(student)}
-                      className="bg-blue-500 text-white px-3 py-1 rounded-lg mr-2"
+                      className="bg-blue-500 text-white px-3 py-1 mb-2 rounded-lg mr-2 hover:bg-blue-600"
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => onDelete(student._id)}
-                      className="bg-red-500 text-white px-3 py-1 rounded-lg"
+                      className="bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600"
                     >
                       Delete
                     </button>
@@ -179,23 +183,22 @@ export default function ShowDetails({ students, onEdit, onDelete }: Props) {
         </table>
       </div>
 
-      {/* Pagination Controls */}
-      <div className="flex justify-center items-center gap-4 mt-4">
-        <button
-          disabled={page === 1}
-          onClick={() => setPage(page - 1)}
-          className="px-4 py-2 bg-gray-500 text-white rounded-lg disabled:opacity-50"
-        >
-          Previous
-        </button>
-        <span className="text-sm">Page {page} of {totalPages}</span>
-        <button
-          disabled={page === totalPages}
-          onClick={() => setPage(page + 1)}
-          className="px-4 py-2 bg-gray-500 text-white rounded-lg disabled:opacity-50"
-        >
-          Next
-        </button>
+      {/* Pagination Component */}
+      <div className="mt-4 flex justify-center">
+        <ReactPaginate
+          previousLabel={"← Previous"}
+          nextLabel={"Next →"}
+          breakLabel={"..."}
+          pageCount={pageCount}
+          marginPagesDisplayed={1}
+          pageRangeDisplayed={2}
+          onPageChange={handlePageClick}
+          containerClassName={"pagination flex gap-2"}
+          activeClassName={"bg-blue-500 text-white px-3 py-1 rounded-lg"}
+          pageClassName={"px-3 py-1 border rounded-lg"}
+          previousClassName={"px-3 py-1 border rounded-lg"}
+          nextClassName={"px-3 py-1 border rounded-lg"}
+        />
       </div>
     </div>
   );
