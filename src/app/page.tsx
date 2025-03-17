@@ -57,7 +57,7 @@ export default function Home() {
 
   // Validate form inputs
   const validateForm = () => {
-    let newErrors = { name: "", email: "", age: "", course: "" };
+    const newErrors = { name: "", email: "", age: "", course: "" };
     let isValid = true;
 
     // Validate name
