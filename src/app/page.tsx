@@ -2,8 +2,6 @@
 import { useState, useEffect } from "react";
 import ShowDetails from "./details";
 
-// const url = FormData ? `/api/students` : "/api/students"; // Ensure consistency
-
 interface Student {
   _id: string;
   name: string;
