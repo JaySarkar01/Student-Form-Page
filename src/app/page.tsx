@@ -264,6 +264,9 @@ export default function Home() {
                   <option value="Mathematics">Mathematics</option>
                   <option value="Physics">Physics</option>
                   <option value="Chemistry">Chemistry</option>
+                  <option value="BCA">BCA</option>
+                  <option value="BA English">BA English</option>
+                  {/* <option value="Chemistry">BA english</option> */}
                 </select>
                 {errors.course && (
                   <p className="text-red-500 text-sm mt-1">{errors.course}</p>

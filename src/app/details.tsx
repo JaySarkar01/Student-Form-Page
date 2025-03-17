@@ -42,31 +42,38 @@ export default function ShowDetails({ students, onEdit, onDelete }: Props) {
     return Array.from(new Set(students.map((student) => student.course)));
   }, [students]);
 
-  // Apply filtering and sorting logic
   const sortedAndFilteredStudents = useMemo(() => {
-    let filtered = students.filter(
-      (student) =>
-        (student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          student.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          student.age.toString().includes(searchQuery)) &&
-        (appliedCourse ? student.course === appliedCourse : true)
-    );
-
-    // Sort students based on selected criteria
-    if (sortConfig.key) {
-      filtered = [...filtered].sort((a, b) => {
+    if (!students || !Array.isArray(students)) return []; // ✅ Ensure students is an array
+  
+    const searchLower = searchQuery?.toLowerCase() ?? ""; // ✅ Ensure searchQuery is a string
+  
+    // ✅ Filtering logic with null checks
+    const filtered = students
+      .filter((student) => {
+        if (!student?.name || !student?.email || !student?.age) return false;
+  
         return (
-          String(a[sortConfig.key]).localeCompare(
-            String(b[sortConfig.key]),
-            undefined,
-            { sensitivity: "base" }
-          ) * (sortConfig.direction === "asc" ? 1 : -1)
+          student.name.toLowerCase().includes(searchLower) ||
+          student.email.toLowerCase().includes(searchLower) ||
+          student.age.toString().includes(searchLower)
         );
+      })
+      .filter((student) => (!appliedCourse ? true : student.course === appliedCourse));
+  
+    // ✅ Sorting logic
+    if (sortConfig?.key) {
+      return [...filtered].sort((a, b) => {
+        const valueA = String(a[sortConfig.key] ?? "");
+        const valueB = String(b[sortConfig.key] ?? "");
+  
+        return valueA.localeCompare(valueB, undefined, { sensitivity: "base" }) * 
+               (sortConfig.direction === "asc" ? 1 : -1);
       });
     }
-
+  
     return filtered;
   }, [students, searchQuery, appliedCourse, sortConfig]);
+  
 
   // Pagination calculations
   const pageCount = Math.ceil(sortedAndFilteredStudents.length / itemsPerPage);
